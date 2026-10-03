@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+.venv/
+.python-version
+
+# 執行期輸出與暫存
+data
+data/output/
+data/input/normalized/
+data/debug/
+data/*.db
+data/*.db-*
+*.png
+tainan_captcha.jpg
+cookies.json
+debug_*.html
+doc
+docs/
+
+# 編輯器
+.vscode/
+.idea/
