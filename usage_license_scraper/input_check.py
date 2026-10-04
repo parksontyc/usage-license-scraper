@@ -19,7 +19,9 @@ LEVEL_WARN = "警告"
 LEVEL_ERROR = "錯誤"
 
 # 已知各縣市資料來源的限制
-_DATA_LIMITS = {"新竹縣": (96, "新竹縣的資料只更新到民國 96 年左右，之後的年度可能查無資料")}
+_DATA_LIMITS = {
+    "新竹縣": (96, "新竹縣 opendata 只更新到民國 96 年左右，這筆要用 bupic 查：執行時需貼上瀏覽器查詢過的 JSESSIONID"),
+}
 
 
 def _format_spec(spec: AddressSpec) -> str:

@@ -14,7 +14,7 @@
 | 新竹市 | ✅ 已實作 |
 | 台中市 | ✅ 已實作 |
 | 高雄市 | ✅ 已實作 |
-| 新竹縣 | ⚠️ 已實作，但該縣開放資料只更新到民國95～96年，查近期年度會查無資料 |
+| 新竹縣 | ✅ 已實作：民國 96 年以前用 opendata；之後的年度用 bupic 明細頁（需貼上瀏覽器查詢過的工作階段，見下方） |
 
 六個縣市都不需要自動辨識/破解驗證碼：新竹市／台中市／高雄市／桃園市走的是
 各縣市官方的「全國建管系統 opendata」公開 API（無需登入、無需驗證碼），
@@ -56,7 +56,7 @@ E807000263,某大樓,高雄市,三民區,河堤路302~312號、明賢街67~77號
 
 - 錯誤（跑批次一定失敗，建議先修）：縣市不支援、使用執照字號解析不出年和號
 - 警告（可以照跑，結果可能要人工確認）：舊縣名轉換、沒有地址、地址有一段沒有門牌號、
-  重複列、年份晚於今年、新竹縣民國 96 年以後（資料不在系統上）、缺少社區編號
+  重複列、年份晚於今年、新竹縣民國 96 年以後（需要 bupic 工作階段）、缺少社區編號
 
 舊格式（中文表頭，年、號分兩欄）也仍然支援：
 
@@ -188,6 +188,18 @@ uv run python -m usage_license_scraper license --city 桃園市 --year 75 --numb
 「使用執照」，也可以是「建造執照」「雜項執照」「拆除執照」等）。對不支援
 該查詢方式的縣市下指令，會列出有支援的縣市。
 
+### 新竹縣（bupic 工作階段）
+
+新竹縣的 opendata 只更新到民國 96 年左右，查不到的會改用縣府「建築執照存根查詢系統」（bupic）的
+明細頁。明細頁要用已經在瀏覽器正常查詢過的工作階段才看得到，所以批次跑到需要 bupic 的列時會提示：
+
+1. 用瀏覽器開 https://build.hsinchu.gov.tw/bupic/preLoginFormAction.do ，正常查詢任意一筆（輸入驗證碼）。
+2. F12 → Application → Cookies → `build.hsinchu.gov.tw`，複製 `JSESSIONID` 的值，貼到終端機後按 Enter。
+
+直接按 Enter 則這次不使用 bupic，這些列標成失敗、下次執行再查。工作階段中途失效時也一樣，
+重新在瀏覽器查詢一筆、貼上新的 JSESSIONID 即可。程式只讀明細頁（每筆間隔 1.5 秒），
+不使用 bupic 的查詢與驗證碼介面；`license_main.csv` 的 `source` 欄會標成 `hsinchu_bupic`。
+
 若該縣市查詢系統需要圖形驗證碼（目前只有台南市），會先把驗證碼圖片存成
 `tainan_captcha.jpg`（不會開瀏覽器），請開啟圖片後在終端機輸入一次驗證碼；
 直接按 Enter 可以換一張。之後同一次執行會重複使用該 session 查詢台南市的所有
@@ -245,7 +257,9 @@ usage_license_scraper/
     ├── new_taipei/        # ✅ 新北市（公開明細頁，只能用使用執照號查）
     │   ├── adapter.py
     │   └── parser.py
-    ├── hsinchu_county/    # ⚠️ 新竹縣（暫用 opendata，資料過舊，待擴充）
+    ├── hsinchu_county/    # ✅ 新竹縣（opendata ＋ bupic 明細頁）
+    │   ├── adapter.py
+    │   └── parser.py
     │   └── adapter.py
     └── tainan/            # ✅ 台南市（NBUPIC，需人工驗證碼，待擴充）
         ├── adapter.py
@@ -261,7 +275,6 @@ usage_license_scraper/
 1. 在該縣市資料夾的 `adapter.py` 覆寫對應的方法（例如 `search_by_address()`）。
 2. 把對應的 `QueryType` 加進 `supported_queries`。
 3. 解析邏輯放在同資料夾的 `parser.py`。
-新竹縣若要改用其他查詢來源，見 `adapters/hsinchu_county/adapter.py` 開頭的說明。
 
 新增一個縣市時：
 1. 先檢查有沒有 `{該縣市建管系統 host}/opendata/docs/a1.html`，有的話在

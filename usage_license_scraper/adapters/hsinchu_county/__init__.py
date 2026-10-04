@@ -1,4 +1,4 @@
-"""新竹縣：暫時沿用 opendata 端點（資料過舊），保留之後換查詢來源的擴充空間。"""
+"""新竹縣：opendata（民國 96 年以前）＋ bupic 明細頁（之後的年度，需使用者提供瀏覽器的工作階段）。"""
 
 from usage_license_scraper.adapters.hsinchu_county.adapter import HsinchuCountyAdapter
 

@@ -306,6 +306,9 @@ def match_license(adapter: CityAdapter, row: InputRow) -> MatchResult:
         )
         number_keys = {normalize_key(c.license_key) for c in by_number}
         both = [c for c in by_address if normalize_key(c.license_key) in number_keys]
+        # 年號查到的執照，本身門牌也相符的一併算進來：有些來源的執照不在門牌查詢範圍內
+        # （例如新竹縣 bupic 補的資料，門牌查詢只查得到 opendata 的舊資料）
+        both = _unique(both + [c for c in by_number if address_matches(specs, c)])
         if both:
             return _narrow(row, both, want, "門牌+年號", f"門牌與年號都相符的執照有 {len(both)} 張")
         if by_address:
@@ -349,6 +352,8 @@ def _address_note(row: InputRow, specs: list[AddressSpec], record: LicenseRecord
         return "+門牌" if specs else ""
     if not record.addresses:
         return "（系統無門牌資料）"
+    if not any((p := parse_address(a.full_address)) and p.number for a in record.addresses):
+        return "（系統門牌不完整）"  # 例如「新竹縣竹北市如備註.附冊.」，沒有門牌號可比
     # 系統門牌只寫到縣市（「臺南市仁和路…」）或完全沒寫（「安北路168號」）時沒有行政區可比，算門牌不同
     known = _record_districts(record) - {_district_stem(record.city or row.city)}
     if row.district and known and _district_stem(row.district) not in known:

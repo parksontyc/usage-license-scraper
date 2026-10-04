@@ -147,7 +147,7 @@ def _fetch_rows(store: LicenseStore, adapter_cls: type[CityAdapter], rows: list[
                 logger.warning(f"{label} 失敗（下次執行會重試）：{e}")
                 continue
             if result.status == STATUS_OK:
-                store.save_success(row, result.record, adapter.source, result.matched_by)
+                store.save_success(row, result.record, adapter.record_source(result.record), result.matched_by)
                 logger.info(f"{label} ✓ {result.record.license_key}（{result.matched_by}）")
             elif result.status == STATUS_PENDING:
                 pending += 1

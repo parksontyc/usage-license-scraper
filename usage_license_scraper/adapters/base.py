@@ -57,6 +57,10 @@ class CityAdapter(ABC):
     #: 資料來源系統，寫進資料庫的 source 欄位，用來判斷欄位空白是不是該系統本來就沒有。
     source: str = ""
 
+    def record_source(self, record: LicenseRecord) -> str:
+        """這張執照是從哪個系統查到的；一個縣市有多個來源時覆寫（例如新竹縣 opendata＋bupic）。"""
+        return self.source
+
     #: 此縣市支援的查詢方式；預設只有用年＋號查單筆。
     supported_queries: frozenset[QueryType] = frozenset({QueryType.LICENSE_NUMBER})
 
