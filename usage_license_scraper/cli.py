@@ -284,6 +284,16 @@ def run_check(input_path: str, output_dir: str) -> None:
         logger.info("「錯誤」的列跑批次時一定會失敗，建議先修正；「警告」的列可以照跑，但結果可能需要人工確認。")
 
 
+def run_import_taipei(download: bool) -> None:
+    from usage_license_scraper.adapters.taipei.index import TaipeiIndex
+
+    index = TaipeiIndex()
+    try:
+        index.ensure_ready(download=download, force=True)
+    finally:
+        index.close()
+
+
 def run_status(store: LicenseStore) -> None:
     rows = store.summary()
     if not rows:
@@ -470,6 +480,14 @@ def _build_parser() -> argparse.ArgumentParser:
                    help=f"輸出目錄（預設 {DEFAULT_CHECK_OUTPUT}）")
 
     p = _add_command(
+        sub, "import-taipei", "台北市：下載最新資料並重建本機索引（batch 會自動做，這個指令用來手動強制更新）",
+        "讀取 data/taipei_usage_license_refer/ 的 XML，建立台北市本機索引（data/taipei_index.db）。\n"
+        "會先下載 config/taipei.toml 列出年度的最新資料；新年度時請在該檔加上新的下載網址。",
+        ["import-taipei", "import-taipei --no-download"],
+    )
+    p.add_argument("--no-download", action="store_true", help="不下載，只用現有的 XML 重建索引")
+
+    p = _add_command(
         sub, "probe-tainan", "（開發用）台南市清單查詢探查：存下清單頁與明細頁，用來改進台南的比對",
         "輸入一次驗證碼後，用查詢頁的「執照號碼」清單查詢去查指定的年＋號（預設：資料庫裡台南市\n"
         "待確認的列），把清單頁和清單中每張執照的明細頁存到 --output。不會寫入資料庫。",
@@ -532,6 +550,9 @@ def main() -> None:
     args = _build_parser().parse_args()
     if args.command == "check":  # 不需要資料庫
         run_check(args.input, args.output)
+        return
+    if args.command == "import-taipei":  # 只動台北市本機索引，不需要主資料庫
+        run_import_taipei(download=not args.no_download)
         return
     if getattr(args, "save_html", None):
         CityAdapter.save_html_dir = Path(args.save_html)

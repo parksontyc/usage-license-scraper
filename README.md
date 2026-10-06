@@ -15,11 +15,11 @@
 | 台中市 | ✅ 已實作 |
 | 高雄市 | ✅ 已實作 |
 | 新竹縣 | ✅ 已實作：民國 96 年以前用 opendata；之後的年度用 bupic 明細頁（需貼上瀏覽器查詢過的工作階段，見下方） |
+| 台北市 | ✅ 已實作：台北市開放資料（民國 036～115 年，051 年缺漏）匯入本機索引後查詢，每月自動更新（見下方） |
 
-六個縣市都不需要自動辨識/破解驗證碼：新竹市／台中市／高雄市／桃園市走的是
-各縣市官方的「全國建管系統 opendata」公開 API（無需登入、無需驗證碼），
-新北市是直接存取公開的明細頁 URL，只有台南市需要人工看圖輸入一次驗證碼
-（之後同一次執行可以重複用 session 批次查）。
+新竹市／台中市／高雄市／桃園市走各縣市官方的「全國建管系統 opendata」公開 API，
+新北市直接存取公開的明細頁 URL，台北市查本機的開放資料索引，這些都不需要驗證碼；
+台南市需要人工看圖輸入一次驗證碼，新竹縣較新的年度需要貼上瀏覽器的工作階段。
 
 ## 安裝
 
@@ -89,10 +89,11 @@ TEST0001, 新北市, 林口區, 新北市林口區林口里1鄰仁愛路一段39
 |--------|----------|----------|
 | `batch` | 整批查詢（CSV/Excel） | 全部 |
 | `license` | 使用執照年＋號查單筆 | 全部 |
-| `year` | 整年度 | 桃園市／新竹市／台中市／高雄市（新竹縣資料過舊） |
+| `year` | 整年度 | 桃園市／新竹市／台中市／高雄市／台北市（新竹縣只有 opendata 的舊資料） |
 | `address` | 門牌 | 同上，另外台南市也支援 |
-| `land` | 地號 | 同上 |
+| `land` | 地號 | 桃園市／新竹市／台中市／高雄市／台北市（新竹縣只有 opendata 的舊資料） |
 | `check` | 跑批次前檢查輸入檔（不查詢、不動資料庫） | — |
+| `import-taipei` | 手動強制更新台北市本機索引（batch 會自動做） | 台北市 |
 
 ```bash
 # 跑批次前先檢查輸入檔：輸出到 data/input/normalized/（input_check.csv、input_normalized.csv）
@@ -184,9 +185,33 @@ uv run python -m usage_license_scraper license --city 桃園市 --year 75 --numb
 - `--refresh`：已查過的也重新查。`--retry-not-found`：重查之前查無資料的。
   `--retry-pending`（batch）：待確認的列依目前的比對規則重新比對（程式改進比對規則後使用）。
 
+`batch`、`license` 可加 `--save-html data/debug`：把抓到的原始網頁（新北市、台南市、新竹縣 bupic）
+存到 `data/debug/<縣市>/`，用來檢查解析是否正確。
+
 `year`／`address`／`land` 可加 `--license-type` 指定其他執照類別（預設
 「使用執照」，也可以是「建造執照」「雜項執照」「拆除執照」等）。對不支援
 該查詢方式的縣市下指令，會列出有支援的縣市。
+
+### 台北市（開放資料本機索引）
+
+台北市的資料來自台北市開放資料（每個年度一個資料集，當年度每月 1 號更新），放在
+`data/taipei_usage_license_refer/`：`40.xml`～`89.xml`（民國 036～089 年）、`Taipei_90_114.xml`、
+`Taipei_<年度>.xml`。批次遇到台北市的列時會自動：
+
+- 第一次使用時把這些 XML 匯入本機索引 `data/taipei_index.db`（約 1 分鐘，只有第一次）
+- 每個月第一次使用時，下載 `config/taipei.toml` 列出年度的最新資料、更新索引
+
+**新年度（例如 116 年）開始時**：在 `config/taipei.toml` 的 `[download]` 加一行
+`116 = "新資料集的下載網址"`（在 data.taipei 資料集頁面的「檔案下載」按鈕上按右鍵 → 複製連結），
+之後就會自動下載。想手動強制更新可以執行：
+
+```bash
+uv run python -m usage_license_scraper import-taipei
+```
+
+已知的資料狀況：051 年的來源檔有誤（`51.xml` 跟 `52.xml` 內容相同），051 年查不到；
+開放資料沒有起造人欄位，`builder` 會是空白；來源資料有 20 組字號重複而內容不同，
+保留欄位較完整的一筆，`source` 欄會加註「來源資料重複」。
 
 ### 新竹縣（bupic 工作階段）
 
@@ -214,7 +239,7 @@ API／公開 URL，不需要驗證碼。
 
 | 檔案 | 內容 |
 |------|------|
-| `license_main.csv` | 每筆執照一列，含社區編號、案名、建物型態代碼（`use_for`）、`community_count`（對到幾個社區）、基本資料與建築規模欄位，以及 `source`（資料來源系統）、`matched_by`（比對方式）、`fetched_at`（查詢時間） |
+| `license_main.csv` | 每筆執照一列，含社區編號、案名、建物型態代碼（`use_for`）、`community_count`（對到幾個社區）、基本資料與建築規模欄位，以及 `source`（資料來源系統）、`matched_by`（比對方式）、`fetched_at`（查詢時間）。發照日期 `issue_date`、開工日期 `start_date`、竣工日期 `completion_date` 統一為 `115年01月02日` 格式（台南市的明細頁沒有開工、竣工日期） |
 | `license_address.csv` | 門牌明細（一執照對多列），含行政區 |
 | `license_land.csv` | 地段地號明細，含行政區 |
 | `community_license.csv` | 每一列批次輸入一列，欄位同輸入檔（COMMUNITY_NO、CASE_NAME…），後面接 `STATUS`（ok／not_found／pending／error）、`MATCHED_LICENSE_KEY`、`MATCHED_BY`、`NOTE`，以及重複提示（見下方） |
@@ -241,12 +266,17 @@ API／公開 URL，不需要驗證碼。
 ```
 usage_license_scraper/
 ├── models.py          # InputRow / AddressQuery / LandQuery / LicenseRecord 等共用資料結構
-├── input_loader.py    # 讀批次 CSV/Excel
+├── input_loader.py    # 讀批次 CSV/Excel（讀檔時正規化）
+├── normalize.py       # 縣市、行政區、地址、字號的正規化
+├── license_no.py      # 使用執照字號拆成年、字、號
+├── input_check.py     # check 指令：正規化與解析結果、問題清單
 ├── storage.py         # SQLite 累積儲存、查詢狀態紀錄（跳過已查過的／續跑）
 ├── output_writer.py   # 從資料庫匯出 CSV
 ├── matcher.py         # 批次比對：完整字號 → 門牌+年號 → 年號+行政區，無法確定的列入待確認
 ├── district.py        # 從門牌推出行政區
-├── cli.py             # 子指令：batch / license / year / address / land / export / status
+├── tainan_probe.py    # （開發用）台南清單查詢探查
+├── cli.py             # 子指令：batch / license / year / address / land / export / status /
+│                      #         check / import-taipei / probe-tainan
 └── adapters/
     ├── base.py            # CityAdapter 介面、QueryType、註冊表
     ├── opendata/          # ✅ 桃園市／新竹市／台中市／高雄市（全國建管系統 opendata API）
@@ -260,10 +290,16 @@ usage_license_scraper/
     ├── hsinchu_county/    # ✅ 新竹縣（opendata ＋ bupic 明細頁）
     │   ├── adapter.py
     │   └── parser.py
-    │   └── adapter.py
-    └── tainan/            # ✅ 台南市（NBUPIC，需人工驗證碼，待擴充）
-        ├── adapter.py
-        └── parser.py
+    ├── tainan/            # ✅ 台南市（NBUPIC，需人工驗證碼）
+    │   ├── adapter.py
+    │   └── parser.py
+    ├── taipei/            # ✅ 台北市（開放資料 XML → 本機索引）
+    │   ├── adapter.py
+    │   ├── index.py       #    索引建立、每月自動下載、查詢
+    │   └── parser.py
+    └── value_format.py    # 台南、新竹縣、台北市共用的欄位格式轉換
+config/
+└── taipei.toml            # 台北市各年度資料集的下載網址（新年度時在這裡加一行）
 ```
 
 每組 adapter 用 `supported_queries` 宣告自己支援哪些查詢方式（`QueryType`：
@@ -271,7 +307,7 @@ usage_license_scraper/
 已經定義好 `fetch()`（必要）以及 `fetch_year()`、`search_by_address()`、
 `search_by_land()`（選配）這幾個方法。
 
-擴充新竹縣／台南市的查詢方式時：
+擴充某個縣市的查詢方式時（例如新北市目前只支援使用執照號）：
 1. 在該縣市資料夾的 `adapter.py` 覆寫對應的方法（例如 `search_by_address()`）。
 2. 把對應的 `QueryType` 加進 `supported_queries`。
 3. 解析邏輯放在同資料夾的 `parser.py`。

@@ -28,6 +28,7 @@ import re
 
 from bs4 import BeautifulSoup
 
+from usage_license_scraper.adapters.value_format import normalize_roc_date
 from usage_license_scraper.district import district_from_address
 from usage_license_scraper.models import (
     AddressRecord,
@@ -59,7 +60,7 @@ def cell(scope, label: str) -> str:
 
 
 def normalize_date(value: str) -> str:
-    return value.removeprefix("民國")
+    return normalize_roc_date(value)
 
 
 def normalize_height(value: str) -> str:
@@ -208,6 +209,8 @@ def build_record(row: InputRow, soup: BeautifulSoup) -> LicenseRecord:
         license_key=cell(soup, "使照字號"),
         original_license=cell(soup, "建照字號"),
         issue_date=normalize_date(cell(info1, "發照日期")),
+        start_date=normalize_date(cell(info1, "開工日期")),
+        completion_date=normalize_date(cell(info1, "竣工日期")),
         builder=cell(info2, "起造人"),
         designer_name=cell(info4, "設計人"),
         designer_firm=cell(info4, "事務所名稱"),

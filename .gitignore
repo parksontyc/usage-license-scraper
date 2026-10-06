@@ -16,7 +16,7 @@ cookies.json
 debug_*.html
 doc
 docs/
-
+config
 # 編輯器
 .vscode/
 .idea/

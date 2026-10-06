@@ -19,6 +19,9 @@ LEVEL_WARN = "警告"
 LEVEL_ERROR = "錯誤"
 
 # 已知各縣市資料來源的限制
+# 來源資料缺漏的年度
+_MISSING_YEARS = {"台北市": {"051": "台北市 051 年的開放資料缺漏（來源檔案有誤），這筆可能查無資料"}}
+
 _DATA_LIMITS = {
     "新竹縣": (96, "新竹縣 opendata 只更新到民國 96 年左右，這筆要用 bupic 查：執行時需貼上瀏覽器查詢過的 JSESSIONID"),
 }
@@ -81,11 +84,18 @@ def check_rows(rows: list[InputRow]) -> list[dict[str, str]]:
             else:
                 errors.append("使用執照字號無法解析出年、號")
         elif not (row.license_year.isdigit() and row.license_number.isdigit()):
-            errors.append("缺少使用執照年或號")
+            adapter_cls = registry.get(row.city)
+            if row.address and adapter_cls and QueryType.ADDRESS in adapter_cls.supported_queries:
+                warnings.append("沒有使用執照字號，只能用地址找候選，可能需要人工確認")
+            else:
+                errors.append("缺少使用執照年或號")
         else:
             year = int(row.license_year)
             if year > roc_year:
                 warnings.append(f"年份 {year} 晚於今年（民國 {roc_year} 年）")
+            missing = _MISSING_YEARS.get(row.city, {}).get(str(year).zfill(3))
+            if missing:
+                warnings.append(missing)
             limit = _DATA_LIMITS.get(row.city)
             if limit and year > limit[0]:
                 warnings.append(limit[1])

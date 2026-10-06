@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 
+from usage_license_scraper.adapters.value_format import normalize_roc_date
 from usage_license_scraper.district import district_from_address
 from usage_license_scraper.models import (
     AddressRecord,
@@ -88,7 +89,9 @@ def build_record(row: InputRow, item: dict) -> LicenseRecord:
         license_number=row.license_number,
         license_key=item.get("核發執照字號", ""),
         original_license=item.get("原領執照字號", ""),
-        issue_date=item.get("發照日期", ""),
+        issue_date=normalize_roc_date(item.get("發照日期", "")),
+        start_date=normalize_roc_date(item.get("實際開工日期", "")),
+        completion_date=normalize_roc_date(item.get("竣工日期", "")),
         builder=item.get("起造人代表人", ""),
         designer_name=item.get("設計人", ""),
         supervisor_name=item.get("監造人", ""),

@@ -15,7 +15,7 @@
     承造人    營造廠「吉米營造有限公司（登記證號：A10798）」 -> contractor_name＝吉米營造有限公司
     地號      529-1                                   ->  0529-0001
     公眾使用  非公眾使用建築物                        ->  否
-開工日期、竣工日期、施工進度、保留地目前資料庫沒有欄位，略過。
+施工進度、保留地目前資料庫沒有欄位，略過。
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ from usage_license_scraper.adapters.value_format import (
     clean_value,
     normalize_cost,
     normalize_household,
+    normalize_roc_date,
     number_with_unit,
 )
 from usage_license_scraper.district import district_from_address
@@ -155,7 +156,9 @@ def build_record(row: InputRow, soup: BeautifulSoup) -> LicenseRecord:
         license_number=row.license_number,
         license_key=get("使用執照號碼"),
         original_license=get("建造執照號碼"),
-        issue_date=get("建物概要", "發照日期"),
+        issue_date=normalize_roc_date(get("建物概要", "發照日期")),
+        start_date=normalize_roc_date(get("建築執照", "開工日期")),
+        completion_date=normalize_roc_date(get("建築執照", "竣工日期")),
         builder=get("起造人", "姓名"),
         designer_name=get("設計人", "姓名"),
         designer_firm=get("設計人", "事務所"),

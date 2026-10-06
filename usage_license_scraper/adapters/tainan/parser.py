@@ -20,7 +20,7 @@ import re
 from bs4 import BeautifulSoup
 
 from usage_license_scraper.adapters.value_format import clean_value as _clean
-from usage_license_scraper.adapters.value_format import normalize_cost, normalize_household
+from usage_license_scraper.adapters.value_format import normalize_cost, normalize_household, normalize_roc_date
 from usage_license_scraper.adapters.value_format import number_with_unit as _number
 from usage_license_scraper.models import (
     AddressRecord,
@@ -165,7 +165,7 @@ def build_record(row: InputRow, soup: BeautifulSoup) -> LicenseRecord:
         license_number=row.license_number,
         license_key=license_key,
         original_license=_val(soup, "原領執照字號"),
-        issue_date=_val(soup, "發照日期"),
+        issue_date=normalize_roc_date(_val(soup, "發照日期")),  # 台南明細頁沒有開工／竣工日期
         builder=_val(soup, "起造人"),
         designer_name=_val(soup, "設計人(姓名)"),
         designer_firm=_val(soup, "設計人(事務所)"),

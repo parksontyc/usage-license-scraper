@@ -324,7 +324,7 @@ def match_license(adapter: CityAdapter, row: InputRow) -> MatchResult:
 def _match_without_year(adapter: CityAdapter, row: InputRow) -> MatchResult:
     """字號解析不出年份（例如「南工字472號」）：能用門牌查的縣市先用地址找候選，
     「號」與「字」都對上而且只有一張才採用，否則候選列入待確認讓人工判斷。"""
-    hint = f"使用執照字號「{row.license_text}」解析不出年、號"
+    hint = f"使用執照字號「{row.license_text}」解析不出年、號" if row.license_text else "沒有使用執照字號"
     specs = _input_specs(row)
     if not specs or QueryType.ADDRESS not in adapter.supported_queries:
         return MatchResult(STATUS_NOT_FOUND, reason=f"{hint}，請修正 LICENSE_NO 或在「完整字號」欄填入系統上的字號")

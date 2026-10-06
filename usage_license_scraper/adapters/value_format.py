@@ -37,6 +37,20 @@ def normalize_household(value: str) -> str:
     return f"{head}，地上{above or 0}層 地下{below or 0}層"
 
 
+def normalize_roc_date(value: str) -> str:
+    """民國日期統一成「115年01月02日」：
+    '民國112年09月11日' -> '112年09月11日'；'1150102' -> '115年01月02日'；'--'、'0000000' -> ''"""
+    v = value.strip().removeprefix("民國").strip()
+    m = re.fullmatch(r"(\d{2,3})(\d{2})(\d{2})", v)
+    if m:
+        if int(m.group(1)) == 0:
+            return ""
+        return f"{m.group(1).zfill(3)}年{m.group(2)}月{m.group(3)}日"
+    if not re.search(r"\d", v) or re.fullmatch(r"0*年?0*月?0*日?", v):
+        return ""
+    return v
+
+
 def normalize_cost(value: str) -> str:
     """'新台幣壹佰肆拾萬零玖仟元整（$1,409,000）' -> '1409000'"""
     m = re.search(r"\$\s*([\d,]+)", value)

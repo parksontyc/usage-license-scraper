@@ -119,6 +119,8 @@ class LicenseRecord:
     license_key: str = ""           # 執照字號（原始格式）
     original_license: str = ""      # 原領執照字號
     issue_date: str = ""            # 發照日期
+    start_date: str = ""            # 開工日期（台南市的明細頁沒有）
+    completion_date: str = ""       # 竣工日期（台南市的明細頁沒有）
     builder: str = ""                # 起造人
     designer_name: str = ""          # 設計人姓名
     designer_firm: str = ""          # 設計人事務所
